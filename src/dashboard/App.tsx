@@ -3,7 +3,7 @@ import { ChromeStorageService } from '../lib/storage/chrome-storage';
 import { db } from '../lib/storage/database';
 import { TimeUtils } from '../lib/utils/helpers';
 import { DailyStats, SiteLimit } from '../lib/types';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { Calendar, Clock, Globe, TrendingUp, Download, Settings, Plus, Edit2, Trash2 } from 'lucide-react';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
@@ -288,21 +288,22 @@ export default function App() {
             
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percentage }) => `${name}: ${percentage}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
+<Pie
+                   data={pieData}
+                   cx="50%"
+                   cy="50%"
+                   innerRadius={60}
+                   outerRadius={100}
+                   fill="#8884d8"
+                   dataKey="value"
+                   label={false}
                 >
                   {pieData.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip formatter={(value: number) => [`${value} min`, 'Time']} />
+                 <Legend layout="vertical" align="right" verticalAlign="middle" />
               </PieChart>
             </ResponsiveContainer>
           </div>
