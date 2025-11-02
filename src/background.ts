@@ -80,7 +80,7 @@ class ActivityTracker {
           // Handle page activity signals from content scripts
           if (message.visible && !this.state.isIdle) {
             // Update tracking if page is visible and user is not idle
-            if (sender.tab?.id && sender.tab.url) {
+            if (sender.tab?.id && sender.tab.url && PatternMatcher.isValidUrl(sender.tab.url)) {
               await this.setActiveTab(sender.tab.id, sender.tab.url, message.title || '');
             }
           }
@@ -142,7 +142,7 @@ class ActivityTracker {
   private async handleTabActivated(activeInfo: chrome.tabs.TabActiveInfo) {
     try {
       const tab = await chrome.tabs.get(activeInfo.tabId);
-      if (tab.url && tab.title) {
+      if (tab.url && tab.title && PatternMatcher.isValidUrl(tab.url)) {
         await this.setActiveTab(tab.id!, tab.url, tab.title);
       }
     } catch (error) {
@@ -151,7 +151,7 @@ class ActivityTracker {
   }
 
   private async handleTabUpdated(tabId: number, changeInfo: chrome.tabs.TabChangeInfo, tab: chrome.tabs.Tab) {
-    if (changeInfo.url && tab.id === this.state.activeTabId) {
+    if (changeInfo.url && tab.id === this.state.activeTabId && PatternMatcher.isValidUrl(changeInfo.url)) {
       await this.setActiveTab(tabId, changeInfo.url, tab.title || '');
     }
   }
@@ -164,7 +164,7 @@ class ActivityTracker {
         const tabs = await chrome.tabs.query({ active: true, windowId });
         if (tabs.length > 0) {
           const tab = tabs[0];
-          if (tab.url && tab.title) {
+          if (tab.url && tab.title && PatternMatcher.isValidUrl(tab.url)) {
             await this.setActiveTab(tab.id!, tab.url, tab.title);
           }
         }
@@ -194,6 +194,11 @@ class ActivityTracker {
   }
 
   private async setActiveTab(tabId: number, url: string, _title: string) {
+    if (!PatternMatcher.isValidUrl(url)) {
+      this.pauseTracking();
+      return;
+    }
+
     const settings = await ChromeStorageService.getSettings();
     
     if (PatternMatcher.isExcluded(url, settings.trackingExclusions)) {

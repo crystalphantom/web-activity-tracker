@@ -364,17 +364,43 @@ export default function App() {
                 siteLimits.map(limit => (
                   <div key={limit.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex-1">
-                      <div className="font-medium text-gray-900">
-                        {limit.pattern}
-                        <span className="ml-2 text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="font-medium text-gray-900">
+                          {limit.pattern}
+                        </div>
+                        <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">
                           {limit.type}
                         </span>
+                        {!limit.enabled && (
+                          <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded">
+                            Disabled
+                          </span>
+                        )}
                       </div>
                       <div className="text-sm text-gray-500">
                         Limit: {TimeUtils.formatShortDuration(limit.dailyLimit)}
+                        {limit.dailyLimit === 0 && (
+                          <span className="text-red-600 ml-2">(Blocked)</span>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updatedLimit = { ...limit, enabled: !limit.enabled };
+                          saveLimit(updatedLimit);
+                        }}
+                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                          limit.enabled ? 'bg-blue-600' : 'bg-gray-300'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                            limit.enabled ? 'translate-x-5' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
                       <button
                         onClick={() => {
                           setEditingLimit(limit);
@@ -424,8 +450,11 @@ function LimitModal({ limit, onSave, onClose }: LimitModalProps) {
     pattern: limit?.pattern || '',
     type: limit?.type || 'domain' as 'domain' | 'regex',
     dailyLimit: limit?.dailyLimit || 3600,
-    enabled: limit?.enabled ?? true
+    enabled: limit?.enabled ?? true,
+    hours: Math.floor((limit?.dailyLimit || 3600) / 3600),
+    minutes: Math.floor(((limit?.dailyLimit || 3600) % 3600) / 60)
   });
+  const [timeInputMode, setTimeInputMode] = useState<'hours' | 'minutes'>('hours');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -479,33 +508,115 @@ function LimitModal({ limit, onSave, onClose }: LimitModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Daily Limit (seconds)
-            </label>
-            <input
-              type="number"
-              value={formData.dailyLimit}
-              onChange={(e) => setFormData({ ...formData, dailyLimit: parseInt(e.target.value) })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              min="60"
-              required
-            />
-            <div className="text-sm text-gray-500 mt-1">
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Daily Limit
+              </label>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTimeInputMode('hours')}
+                  className={`px-3 py-1 text-xs rounded ${
+                    timeInputMode === 'hours'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-700'
+                  }`}
+                >
+                  Hours
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTimeInputMode('minutes')}
+                  className={`px-3 py-1 text-xs rounded ${
+                    timeInputMode === 'minutes'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-700'
+                  }`}
+                >
+                  Minutes
+                </button>
+              </div>
+            </div>
+            
+            {timeInputMode === 'hours' ? (
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <label className="block text-xs text-gray-600 mb-1">Hours</label>
+                  <input
+                    type="number"
+                    value={formData.hours}
+                    onChange={(e) => {
+                      const hours = parseInt(e.target.value) || 0;
+                      const newLimit = hours * 3600 + formData.minutes * 60;
+                      setFormData({ ...formData, hours, dailyLimit: newLimit });
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    min="0"
+                    max="23"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs text-gray-600 mb-1">Minutes</label>
+                  <input
+                    type="number"
+                    value={formData.minutes}
+                    onChange={(e) => {
+                      const minutes = parseInt(e.target.value) || 0;
+                      const newLimit = formData.hours * 3600 + minutes * 60;
+                      setFormData({ ...formData, minutes, dailyLimit: newLimit });
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    min="0"
+                    max="59"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div>
+                <input
+                  type="number"
+                  value={Math.floor(formData.dailyLimit / 60)}
+                  onChange={(e) => {
+                    const minutes = parseInt(e.target.value) || 0;
+                    setFormData({ ...formData, dailyLimit: minutes * 60 });
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  min="0"
+                />
+                <div className="text-xs text-gray-500 mt-1">Total minutes</div>
+              </div>
+            )}
+            
+            <div className="text-sm text-gray-500 mt-2">
               {TimeUtils.formatShortDuration(formData.dailyLimit)}
+              {formData.dailyLimit === 0 && (
+                <span className="text-red-600 ml-2">(Completely blocked)</span>
+              )}
             </div>
           </div>
 
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="enabled"
-              checked={formData.enabled}
-              onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
-              className="mr-2"
-            />
-            <label htmlFor="enabled" className="text-sm text-gray-700">
-              Enabled
-            </label>
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div>
+              <label htmlFor="enabled" className="text-sm font-medium text-gray-700">
+                Enable Limit
+              </label>
+              <div className="text-xs text-gray-500">
+                {formData.enabled ? 'Limit is active' : 'Limit is disabled'}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, enabled: !formData.enabled })}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                formData.enabled ? 'bg-blue-600' : 'bg-gray-300'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  formData.enabled ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
           </div>
 
           <div className="flex gap-3 pt-4">

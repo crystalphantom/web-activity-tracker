@@ -92,12 +92,22 @@ export default function App() {
             <Clock className="w-5 h-5" />
             Activity Tracker
           </h1>
-          <button
-            onClick={openOptions}
-            className="p-1 hover:bg-blue-700 rounded transition-colors"
-          >
-            <Settings className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={openDashboard}
+              className="bg-blue-500 text-white px-3 py-1 rounded text-sm font-medium hover:bg-blue-600 transition-colors flex items-center gap-1"
+            >
+              <BarChart3 className="w-3 h-3" />
+              Dashboard
+            </button>
+            <button
+              onClick={openOptions}
+              className="p-1 hover:bg-blue-700 rounded transition-colors"
+              title="Open Settings"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+          </div>
         </div>
         
         <div className="text-center">
@@ -152,13 +162,6 @@ export default function App() {
         </div>
 
         <div className="flex gap-2">
-          <button
-            onClick={openDashboard}
-            className="flex-1 bg-blue-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-          >
-            <BarChart3 className="w-4 h-4" />
-            Dashboard
-          </button>
           <button
             onClick={openOptions}
             className="flex-1 bg-gray-200 text-gray-700 px-3 py-2 rounded text-sm font-medium hover:bg-gray-300 transition-colors flex items-center justify-center gap-2"

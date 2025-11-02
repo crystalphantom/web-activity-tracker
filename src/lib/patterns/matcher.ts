@@ -48,4 +48,19 @@ export class PatternMatcher {
       domain === exclusion || domain.endsWith('.' + exclusion)
     );
   }
+
+  static isValidUrl(url: string): boolean {
+    if (
+      (!url.startsWith('http:') &&
+        !url.startsWith('https:') &&
+        !url.startsWith('file:')) ||
+      url.startsWith('chrome://') ||
+      url.startsWith('chrome-extension://') ||
+      url === 'about:blank' ||
+      url === ''
+    ) {
+      return false;
+    }
+    return true;
+  }
 }
