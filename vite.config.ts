@@ -1,12 +1,28 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
+import { copyFileSync, existsSync, mkdirSync } from 'fs';
 
 export default defineConfig({
   plugins: [
     react(),
+    {
+      name: 'copy-manifest',
+      writeBundle() {
+        const distDir = resolve(__dirname, 'dist');
+        if (!existsSync(distDir)) {
+          mkdirSync(distDir, { recursive: true });
+        }
+        copyFileSync(
+          resolve(__dirname, 'public/manifest.json'),
+          resolve(__dirname, 'dist/manifest.json')
+        );
+      }
+    }
   ],
   build: {
+    outDir: 'dist',
+    emptyOutDir: true,
     rollupOptions: {
       input: {
         popup: resolve(__dirname, 'src/popup/index.html'),
@@ -17,9 +33,21 @@ export default defineConfig({
         blocked: resolve(__dirname, 'src/blocked.html')
       },
       output: {
-        entryFileNames: '[name].js',
+        entryFileNames: (chunkInfo) => {
+          if (chunkInfo.name === 'background') return 'background.js';
+          if (chunkInfo.name === 'content') return 'content.js';
+          return '[name].js';
+        },
         chunkFileNames: '[name].js',
-        assetFileNames: '[name].[ext]'
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name?.endsWith('.html')) {
+            return assetInfo.name;
+          }
+          if (assetInfo.name?.match(/\.(png|jpe?g|gif|svg|ico)$/)) {
+            return 'icons/[name].[ext]';
+          }
+          return '[name].[ext]';
+        }
       }
     }
   },
