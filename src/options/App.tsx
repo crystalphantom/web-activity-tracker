@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChromeStorageService } from '../lib/storage/chrome-storage';
 import { db } from '../lib/storage/database';
 import { ExtensionSettings } from '../lib/types';
-import { Settings, Download, Upload, Trash2, Save, RotateCcw } from 'lucide-react';
+import { Settings, Download, Upload, Trash2, Save, RotateCcw, ArrowLeft } from 'lucide-react';
 
 export default function App() {
   const [settings, setSettings] = useState<ExtensionSettings>({
@@ -157,6 +157,10 @@ export default function App() {
     }
   };
 
+  const goToDashboard = () => {
+    chrome.tabs.create({ url: chrome.runtime.getURL('src/dashboard/index.html') });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -170,10 +174,20 @@ export default function App() {
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Settings className="w-6 h-6 text-blue-600" />
-              Settings
-            </h1>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={goToDashboard}
+                className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Back to Dashboard"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                Back
+              </button>
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <Settings className="w-6 h-6 text-blue-600" />
+                Settings
+              </h1>
+            </div>
             
             <button
               onClick={saveSettings}
