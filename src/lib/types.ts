@@ -36,4 +36,5 @@ export interface ExtensionSettings {
   trackingExclusions: string[];
   dataRetentionDays: number;
   theme: 'light' | 'dark';
+  blockShorts: boolean;
 }

@@ -1,150 +1,6 @@
 (() => {
-  let isBlocked = false;
-  let blockOverlay: HTMLDivElement | null = null;
-
-  const createBlockOverlay = (message: string, timeSpent: string, limit: string) => {
-    if (blockOverlay) return;
-
-    blockOverlay = document.createElement('div');
-    blockOverlay.id = 'web-activity-tracker-block';
-    blockOverlay.innerHTML = `
-      <div style="
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.9);
-        z-index: 999999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      ">
-        <div style="
-          background: white;
-          padding: 2rem;
-          border-radius: 1rem;
-          max-width: 500px;
-          text-align: center;
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-        ">
-          <div style="
-            width: 80px;
-            height: 80px;
-            background: #fee2e2;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1.5rem;
-          ">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="8" x2="12" y2="12"></line>
-              <line x1="12" y1="16" x2="12.01" y2="16"></line>
-            </svg>
-          </div>
-          
-          <h2 style="color: #1f2937; margin: 0 0 1rem 0; font-size: 1.5rem; font-weight: 600;">
-            Time Limit Reached
-          </h2>
-          
-          <p style="color: #6b7280; margin: 0 0 1.5rem 0; line-height: 1.6;">
-            ${message}
-          </p>
-          
-          <div style="
-            background: #f3f4f6;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin-bottom: 1.5rem;
-          ">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-              <span style="color: #6b7280;">Time spent today:</span>
-              <span style="font-weight: 600; color: #1f2937;">${timeSpent}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-              <span style="color: #6b7280;">Daily limit:</span>
-              <span style="font-weight: 600; color: #1f2937;">${limit}</span>
-            </div>
-          </div>
-          
-          <div style="color: #059669; font-size: 0.875rem; margin-bottom: 1.5rem;">
-            🕐 Resets at midnight
-          </div>
-          
-          <button id="continue-btn" style="
-            background: #3b82f6;
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 500;
-            cursor: pointer;
-            margin-right: 0.5rem;
-          ">
-            Continue Anyway
-          </button>
-          
-          <button id="settings-btn" style="
-            background: #6b7280;
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 500;
-            cursor: pointer;
-          ">
-            Adjust Limit
-          </button>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(blockOverlay);
-
-    const continueBtn = blockOverlay.querySelector('#continue-btn');
-    const settingsBtn = blockOverlay.querySelector('#settings-btn');
-
-    continueBtn?.addEventListener('click', () => {
-      removeBlockOverlay();
-    });
-
-    settingsBtn?.addEventListener('click', () => {
-      chrome.runtime.openOptionsPage();
-    });
-  };
-
-  const removeBlockOverlay = () => {
-    if (blockOverlay) {
-      blockOverlay.remove();
-      blockOverlay = null;
-      isBlocked = false;
-    }
-  };
-
-  const checkBlockStatus = async () => {
-    try {
-      const response = await chrome.runtime.sendMessage({
-        type: 'CHECK_BLOCK_STATUS',
-        url: window.location.href
-      });
-
-      if (response?.blocked && !isBlocked) {
-        isBlocked = true;
-        createBlockOverlay(
-          response.message || "You've reached your time limit for this site.",
-          response.timeSpent || '0m',
-          response.limit || '0m'
-        );
-      } else if (!response?.blocked && isBlocked) {
-        removeBlockOverlay();
-      }
-    } catch (error) {
-      console.error('Error checking block status:', error);
-    }
-  };
+  // Content script - handles activity tracking and YouTube Shorts blocking
+  // Blocking is handled by background script redirect to blocked.html
 
   const sendActivitySignal = () => {
     chrome.runtime.sendMessage({
@@ -155,6 +11,225 @@
     });
   };
 
+  const checkBlockStatus = async () => {
+    try {
+      const response = await chrome.runtime.sendMessage({
+        type: 'CHECK_BLOCK_STATUS',
+        url: window.location.href
+      });
+
+      // Content script overlay disabled - using redirect approach instead
+      // If site is blocked, background will handle redirect
+      if (response?.blocked) {
+        console.log('Site is blocked, redirect should be handled by background script');
+      }
+    } catch (error) {
+      console.error('Error checking block status:', error);
+      setTimeout(checkBlockStatus, 2000);
+    }
+  };
+
+  // YouTube Shorts Blocking Functionality
+  class YouTubeShortsBlocker {
+    private isEnabled: boolean = false;
+    private observer: MutationObserver | null = null;
+    private styleElement: HTMLStyleElement | null = null;
+
+    constructor() {
+      this.init();
+    }
+
+    private async init() {
+      // Check if we're on YouTube and Shorts blocking is enabled
+      if (this.isYouTube()) {
+        await this.loadSettings();
+        if (this.isEnabled) {
+          this.startBlocking();
+        }
+      }
+    }
+
+    private isYouTube(): boolean {
+      return window.location.hostname.includes('youtube.com');
+    }
+
+    private async loadSettings() {
+      try {
+        const response = await chrome.runtime.sendMessage({
+          type: 'GET_SETTINGS'
+        });
+        this.isEnabled = response?.settings?.blockShorts || false;
+      } catch (error) {
+        console.error('Error loading settings:', error);
+      }
+    }
+
+    private startBlocking() {
+      console.log('Starting YouTube Shorts blocking');
+      this.injectCSS();
+      this.removeExistingShorts();
+      this.observeChanges();
+    }
+
+    private stopBlocking() {
+      console.log('Stopping YouTube Shorts blocking');
+      this.removeCSS();
+      this.stopObserving();
+    }
+
+    private injectCSS() {
+      if (this.styleElement) return;
+
+      this.styleElement = document.createElement('style');
+      this.styleElement.textContent = `
+        /* Hide Shorts navigation in sidebar */
+        a[href*="/shorts"], 
+        a[title="Shorts"],
+        ytd-guide-entry-renderer:has(a[href*="/shorts"]) {
+          display: none !important;
+        }
+
+        /* Hide Shorts sections in feed */
+        ytd-rich-shelf-renderer:has(span[id="title"][aria-label*="Shorts"]),
+        ytd-rich-shelf-renderer:has(h2:contains("Shorts")),
+        ytd-item-section-renderer:has(ytd-rich-shelf-renderer:has(a[href*="/shorts"])) {
+          display: none !important;
+        }
+
+        /* Hide individual Shorts videos */
+        a[href*="/shorts/"],
+        ytd-video-renderer:has(a[href*="/shorts/"]),
+        ytd-compact-video-renderer:has(a[href*="/shorts/"]) {
+          display: none !important;
+        }
+
+        /* Hide Shorts shelf containers */
+        [aria-label*="Shorts"],
+        ytd-reel-shelf-renderer,
+        ytd-shorts-lockup-view-model-wiz {
+          display: none !important;
+        }
+
+        /* Hide Shorts in recommendations */
+        ytd-compact-video-renderer:has(span:contains("#shorts")),
+        ytd-video-renderer:has(span:contains("#shorts")) {
+          display: none !important;
+        }
+      `;
+      document.head.appendChild(this.styleElement);
+    }
+
+    private removeCSS() {
+      if (this.styleElement) {
+        this.styleElement.remove();
+        this.styleElement = null;
+      }
+    }
+
+    private removeExistingShorts() {
+      // Remove Shorts navigation items
+      const shortsLinks = document.querySelectorAll('a[href*="/shorts"], a[title="Shorts"]');
+      shortsLinks.forEach(link => {
+        const parent = link.closest('ytd-guide-entry-renderer') || link.parentElement;
+        if (parent) {
+          parent.remove();
+        }
+      });
+
+      // Remove Shorts sections in feed
+      const shortsSections = document.querySelectorAll('ytd-rich-shelf-renderer');
+      shortsSections.forEach(section => {
+        const title = section.querySelector('span[id="title"], h2');
+        if (title && (title.textContent?.includes('Shorts') || title.getAttribute('aria-label')?.includes('Shorts'))) {
+          section.remove();
+        }
+      });
+
+      // Remove individual Shorts videos
+      const shortsVideos = document.querySelectorAll('a[href*="/shorts/"]');
+      shortsVideos.forEach(link => {
+        const videoRenderer = link.closest('ytd-video-renderer, ytd-compact-video-renderer');
+        if (videoRenderer) {
+          videoRenderer.remove();
+        }
+      });
+
+      // Remove Shorts shelf containers
+      const shortsShelves = document.querySelectorAll('[aria-label*="Shorts"], ytd-reel-shelf-renderer, ytd-shorts-lockup-view-model-wiz');
+      shortsShelves.forEach(shelf => shelf.remove());
+    }
+
+    private observeChanges() {
+      if (this.observer) return;
+
+      this.observer = new MutationObserver((mutations) => {
+        let hasRelevantChanges = false;
+        
+        mutations.forEach((mutation) => {
+          if (mutation.type === 'childList') {
+            // Check if new Shorts-related elements were added
+            const addedNodes = Array.from(mutation.addedNodes);
+            hasRelevantChanges = addedNodes.some(node => {
+              if (node.nodeType === Node.ELEMENT_NODE) {
+                const element = node as Element;
+                return (
+                  element.querySelector?.('a[href*="/shorts"]') ||
+                  element.querySelector?.('[aria-label*="Shorts"]') ||
+                  element.getAttribute?.('aria-label')?.includes('Shorts') ||
+                  element.textContent?.includes('Shorts')
+                );
+              }
+              return false;
+            });
+          }
+        });
+
+        if (hasRelevantChanges) {
+          setTimeout(() => this.removeExistingShorts(), 100);
+        }
+      });
+
+      this.observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+    }
+
+    private stopObserving() {
+      if (this.observer) {
+        this.observer.disconnect();
+        this.observer = null;
+      }
+    }
+
+    public async toggle(enabled: boolean) {
+      this.isEnabled = enabled;
+      if (enabled) {
+        this.startBlocking();
+      } else {
+        this.stopBlocking();
+      }
+    }
+  }
+
+  // Initialize YouTube Shorts Blocker
+  let shortsBlocker: YouTubeShortsBlocker | null = null;
+
+  // Initialize blocker when page loads
+  if (window.location.hostname.includes('youtube.com')) {
+    shortsBlocker = new YouTubeShortsBlocker();
+  }
+
+  // Listen for settings changes
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message.type === 'SHORTS_BLOCKING_TOGGLE' && shortsBlocker) {
+      shortsBlocker.toggle(message.enabled);
+      sendResponse({ success: true });
+    }
+    return true;
+  });
+
+  // Event listeners for activity tracking
   document.addEventListener('visibilitychange', () => {
     sendActivitySignal();
   });
@@ -168,12 +243,15 @@
     sendActivitySignal();
   });
 
-  setInterval(() => {
-    if (!document.hidden) {
-      sendActivitySignal();
-    }
-  }, 30000);
+  // Initial check when page loads
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(checkBlockStatus, 1000);
+    });
+  } else {
+    setTimeout(checkBlockStatus, 1000);
+  }
 
-  setTimeout(checkBlockStatus, 1000);
+  // Send initial activity signal
   sendActivitySignal();
 })();

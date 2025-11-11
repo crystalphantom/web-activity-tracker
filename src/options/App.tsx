@@ -9,7 +9,8 @@ export default function App() {
     idleTimeout: 60,
     trackingExclusions: ['localhost', '127.0.0.1'],
     dataRetentionDays: 90,
-    theme: 'light'
+    theme: 'light',
+    blockShorts: false
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -35,6 +36,20 @@ export default function App() {
     setSaving(true);
     try {
       await ChromeStorageService.saveSettings(settings);
+      
+      // Notify all YouTube tabs about Shorts blocking setting change
+      const tabs = await chrome.tabs.query({});
+      tabs.forEach(tab => {
+        if (tab.url && tab.url.includes('youtube.com') && tab.id) {
+          chrome.tabs.sendMessage(tab.id, {
+            type: 'SHORTS_BLOCKING_TOGGLE',
+            enabled: settings.blockShorts
+          }).catch(() => {
+            // Ignore errors for tabs that don't have content script loaded
+          });
+        }
+      });
+      
       showMessage('Settings saved successfully!');
     } catch (error) {
       console.error('Error saving settings:', error);
@@ -143,7 +158,8 @@ export default function App() {
         idleTimeout: 60,
         trackingExclusions: ['localhost', '127.0.0.1'],
         dataRetentionDays: 90,
-        theme: 'light'
+        theme: 'light',
+        blockShorts: false
       };
       
       try {
@@ -250,6 +266,30 @@ export default function App() {
                   <option value="light">Light</option>
                   <option value="dark">Dark</option>
                 </select>
+              </div>
+
+              <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg">
+                <div>
+                  <label className="text-sm font-medium text-gray-700">
+                    Block YouTube Shorts
+                  </label>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Automatically hide Shorts from YouTube pages
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSettings({ ...settings, blockShorts: !settings.blockShorts })}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    settings.blockShorts ? 'bg-blue-600' : 'bg-gray-200'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      settings.blockShorts ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
               </div>
             </div>
           </div>

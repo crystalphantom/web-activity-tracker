@@ -45,6 +45,11 @@ class ActivityTracker {
 
   private async handleMessage(message: any, sender: chrome.runtime.MessageSender, sendResponse: Function) {
     try {
+      // Handle incognito mode specifically
+      if (sender.tab?.incognito) {
+        console.log('Message from incognito tab:', message.type);
+      }
+      
       switch (message.type) {
         case 'CHECK_BLOCK_STATUS':
           const isBlocked = await this.checkSiteLimits(message.url);
@@ -58,7 +63,8 @@ class ActivityTracker {
             blocked: isBlocked,
             message: `You've reached your daily time limit for ${domain}`,
             timeSpent: TimeUtils.formatShortDuration(timeSpent),
-            limit: limit ? TimeUtils.formatShortDuration(limit.dailyLimit) : 'Unknown'
+            limit: limit ? TimeUtils.formatShortDuration(limit.dailyLimit) : 'Unknown',
+            domain: domain
           });
           break;
 
@@ -84,6 +90,11 @@ class ActivityTracker {
               await this.setActiveTab(sender.tab.id, sender.tab.url, message.title || '');
             }
           }
+          break;
+
+        case 'GET_SETTINGS':
+          const settings = await ChromeStorageService.getSettings();
+          sendResponse({ settings });
           break;
 
         default:
@@ -244,8 +255,31 @@ class ActivityTracker {
   }
 
   private async blockSite(tabId: number) {
-    const blockedUrl = chrome.runtime.getURL('src/blocked.html');
-    await chrome.tabs.update(tabId, { url: blockedUrl });
+    try {
+      const tab = await chrome.tabs.get(tabId);
+      if (tab.url) {
+        const domain = PatternMatcher.extractDomain(tab.url);
+        const today = TimeUtils.getTodayString();
+        const stats = await ChromeStorageService.getDailyStats(today);
+        const timeSpent = stats?.siteBreakdown[domain]?.time || 0;
+        const limit = await this.getMatchingLimit(tab.url);
+        
+        // Redirect to blocked page with parameters
+        const blockedUrl = chrome.runtime.getURL(`blocked.html?domain=${encodeURIComponent(domain)}&timeSpent=${timeSpent}&limit=${limit?.dailyLimit || 0}`);
+        
+        await chrome.tabs.update(tabId, { url: blockedUrl });
+      }
+    } catch (error) {
+      console.error('Error blocking site:', error);
+      // Fallback to content script approach
+      try {
+        await chrome.tabs.sendMessage(tabId, {
+          type: 'TRIGGER_BLOCK_CHECK'
+        });
+      } catch (fallbackError) {
+        console.log('Content script not ready either:', fallbackError);
+      }
+    }
   }
 
   private pauseTracking() {

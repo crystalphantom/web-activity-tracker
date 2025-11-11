@@ -54,7 +54,8 @@ export class ChromeStorageService {
       idleTimeout: 60,
       trackingExclusions: ['localhost', '127.0.0.1'],
       dataRetentionDays: 90,
-      theme: 'light'
+      theme: 'light',
+      blockShorts: false
     };
   }
 
