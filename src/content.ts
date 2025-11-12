@@ -6,7 +6,7 @@
     if (blockOverlay) return;
 
     blockOverlay = document.createElement('div');
-    blockOverlay.id = 'web-activity-tracker-block';
+    blockOverlay.id = 'wakesmith-block';
     blockOverlay.innerHTML = `
       <div style="
         position: fixed;

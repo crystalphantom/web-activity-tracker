@@ -126,7 +126,7 @@ class ActivityTracker {
       this.setupEventListeners();
       this.startTracking();
       this.isInitialized = true;
-      console.log('Web Activity Tracker initialized');
+      console.log('WakeSmith initialized');
     } catch (error) {
       console.error('Failed to initialize ActivityTracker:', error);
     }

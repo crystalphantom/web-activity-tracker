@@ -82,7 +82,7 @@ export default function App() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `web-activity-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `wakesmith-backup-${new Date().toISOString().split('T')[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
 
@@ -185,7 +185,7 @@ export default function App() {
               </button>
               <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                 <Settings className="w-6 h-6 text-blue-600" />
-                Settings
+                WakeSmith Settings
               </h1>
             </div>
             
@@ -375,8 +375,8 @@ export default function App() {
             <h2 className="text-lg font-semibold text-gray-900 mb-4">About</h2>
             
             <div className="space-y-2 text-sm text-gray-600">
-              <p><strong>Web Activity Tracker</strong> v1.0.0</p>
-              <p>A comprehensive browser extension for tracking web activity and managing screen time.</p>
+              <p><strong>WakeSmith</strong> v1.0.0</p>
+              <p>Stop doomscrolling and wake up. Take control of your digital habits.</p>
               <div className="pt-2">
                 <p><strong>Features:</strong></p>
                 <ul className="list-disc list-inside mt-1 space-y-1">

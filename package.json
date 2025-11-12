@@ -1,7 +1,7 @@
 {
-  "name": "web-activity-tracker",
+  "name": "wakesmith",
   "version": "1.0.0",
-  "description": "A comprehensive web activity tracker Chrome extension",
+  "description": "Stop doomscrolling and wake up - Chrome extension for digital wellness",
   "type": "module",
   "scripts": {
     "dev": "vite",

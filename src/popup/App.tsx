@@ -90,7 +90,7 @@ export default function App() {
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-lg font-semibold flex items-center gap-2">
             <Clock className="w-5 h-5" />
-            Activity Tracker
+            WakeSmith
           </h1>
           <div className="flex items-center gap-2">
             <button

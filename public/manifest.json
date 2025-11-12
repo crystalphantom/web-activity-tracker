@@ -1,6 +1,6 @@
 {
-  "name": "Web Activity Tracker",
-  "description": "Track your web activity and set time limits for websites",
+  "name": "WakeSmith",
+  "description": "Stop doomscrolling and wake up",
   "version": "1.0.0",
   "manifest_version": 3,
   "permissions": [
@@ -17,7 +17,7 @@
   },
   "action": {
     "default_popup": "src/popup/index.html",
-    "default_title": "Web Activity Tracker",
+    "default_title": "WakeSmith",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",

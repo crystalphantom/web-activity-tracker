@@ -1,6 +1,6 @@
-# Web Activity Tracker Chrome Extension
+# WakeSmith Chrome Extension
 
-A comprehensive Chrome extension for tracking web activity and setting time limits for websites. Built with React, TypeScript, and modern web technologies.
+Stop doomscrolling and wake up. A comprehensive Chrome extension for tracking web activity and setting time limits for websites. Built with React, TypeScript, and modern web technologies.
 
 ## Features
 
@@ -20,7 +20,7 @@ A comprehensive Chrome extension for tracking web activity and setting time limi
 1. Clone or download this repository
 2. Install dependencies:
    ```bash
-   cd web-activity-tracker
+   cd wakesmith
    npm install
    ```
 
@@ -119,7 +119,7 @@ The dashboard provides several views:
 ### Project Structure
 
 ```
-web-activity-tracker/
+wakesmith/
 ├── src/
 │   ├── background.ts          # Service worker
 │   ├── content.ts             # Content script
@@ -170,7 +170,7 @@ npm run lint
 
 1. Open Chrome DevTools for the extension:
    - Go to `chrome://extensions/`
-   - Find "Web Activity Tracker" and click "Service worker" to open background script DevTools
+    - Find "WakeSmith" and click "Service worker" to open background script DevTools
    - Right-click the popup and select "Inspect" to debug popup interface
 
 2. Check console logs for error messages

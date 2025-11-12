@@ -1,4 +1,4 @@
-# Web Activity Tracker - Agent Guidelines
+# WakeSmith - Agent Guidelines
 
 ## Build Commands
 - `pnpm run build` - Production build (TypeScript compile + Vite build)
