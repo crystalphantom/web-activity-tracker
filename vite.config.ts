@@ -14,7 +14,8 @@ export default defineConfig({
         options: resolve(__dirname, 'src/options/index.html'),
         background: resolve(__dirname, 'src/background.ts'),
         content: resolve(__dirname, 'src/content.ts'),
-        blocked: resolve(__dirname, 'src/blocked.html')
+        blocked: resolve(__dirname, 'src/blocked.html'),
+        'blocked-script': resolve(__dirname, 'src/blocked.ts')
       },
       output: {
         entryFileNames: '[name].js',

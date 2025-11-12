@@ -23,17 +23,48 @@ class ActivityTracker {
 
   private updateInterval: number | null = null;
   private idleCheckInterval: number | null = null;
+  private isInitialized = false;
 
   constructor() {
-    this.initialize();
     this.setupMessageHandlers();
+    // Wait for service worker to be ready before initializing
+    if (chrome.runtime.onStartup) {
+      chrome.runtime.onStartup.addListener(() => this.initialize());
+    }
+    if (chrome.runtime.onInstalled) {
+      chrome.runtime.onInstalled.addListener(() => this.initialize());
+    }
+    // Also try to initialize immediately if already ready
+    this.initializeWhenReady();
+  }
+
+  private async initializeWhenReady() {
+    try {
+      // Check if service worker is ready
+      if (chrome.runtime && chrome.runtime.id) {
+        await this.initialize();
+      } else {
+        // Wait a bit and try again
+        setTimeout(() => this.initializeWhenReady(), 100);
+      }
+    } catch (error) {
+      console.error('Error during initialization:', error);
+      setTimeout(() => this.initializeWhenReady(), 1000);
+    }
   }
 
   private async initialize() {
-    await this.setupAlarms();
-    this.setupEventListeners();
-    this.startTracking();
-    console.log('Web Activity Tracker initialized');
+    if (this.isInitialized) return;
+    
+    try {
+      await this.setupAlarms();
+      this.setupEventListeners();
+      this.startTracking();
+      this.isInitialized = true;
+      console.log('Web Activity Tracker initialized');
+    } catch (error) {
+      console.error('Failed to initialize ActivityTracker:', error);
+    }
   }
 
   private setupMessageHandlers() {
@@ -63,9 +94,13 @@ class ActivityTracker {
           break;
 
         case 'GET_BLOCK_INFO':
-          const blockLimit = await this.getMatchingLimit(sender.url || '');
+          // Get the original blocked URL from session storage
+          const sessionData = await chrome.storage.session.get(['blockedUrl']);
+          const originalUrl = sessionData.blockedUrl || sender.url || '';
+          
+          const blockLimit = await this.getMatchingLimit(originalUrl);
           const blockStats = await ChromeStorageService.getDailyStats(TimeUtils.getTodayString());
-          const blockDomain = PatternMatcher.extractDomain(sender.url || '');
+          const blockDomain = PatternMatcher.extractDomain(originalUrl);
           const blockTimeSpent = blockStats?.siteBreakdown[blockDomain]?.time || 0;
           
           sendResponse({
@@ -244,8 +279,18 @@ class ActivityTracker {
   }
 
   private async blockSite(tabId: number) {
-    const blockedUrl = chrome.runtime.getURL('src/blocked.html');
-    await chrome.tabs.update(tabId, { url: blockedUrl });
+    try {
+      const tab = await chrome.tabs.get(tabId);
+      const originalUrl = tab.url;
+      
+      // Store the original URL in session storage before redirecting
+      await chrome.storage.session.set({ blockedUrl: originalUrl });
+      
+      const blockedUrl = chrome.runtime.getURL('src/blocked.html');
+      await chrome.tabs.update(tabId, { url: blockedUrl });
+    } catch (error) {
+      console.error('Error blocking site:', error);
+    }
   }
 
   private pauseTracking() {
