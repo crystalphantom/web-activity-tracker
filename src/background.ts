@@ -55,7 +55,6 @@ class ActivityTracker {
 
   private async initializeDefaultSiteLimits() {
     const existingLimits = await ChromeStorageService.getSiteLimits();
-    console.log('Existing limits count:', existingLimits.length);
     
     // Check if we need to add default presets (no limits or only user-added limits)
     const hasDefaultPresets = existingLimits.some(limit => 

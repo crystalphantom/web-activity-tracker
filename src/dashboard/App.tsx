@@ -166,6 +166,16 @@ export default function App() {
     }
   };
 
+  const toggleLimit = async (limit: SiteLimit) => {
+    try {
+      const updatedLimit = { ...limit, enabled: !limit.enabled };
+      await ChromeStorageService.updateSiteLimit(limit.id, updatedLimit);
+      await loadData();
+    } catch (error) {
+      console.error('Error toggling limit:', error);
+    }
+  };
+
   const addDefaultPresets = async () => {
     try {
       const existingLimits = await ChromeStorageService.getSiteLimits();
@@ -465,10 +475,7 @@ export default function App() {
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => {
-                          const updatedLimit = { ...limit, enabled: !limit.enabled };
-                          saveLimit(updatedLimit);
-                        }}
+                        onClick={() => toggleLimit(limit)}
                         className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
                           limit.enabled ? 'bg-blue-600' : 'bg-gray-300'
                         }`}
