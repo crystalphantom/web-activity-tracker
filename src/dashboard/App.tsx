@@ -4,7 +4,7 @@ import { db } from '../lib/storage/database';
 import { TimeUtils } from '../lib/utils/helpers';
 import { DailyStats, SiteLimit } from '../lib/types';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { Calendar, Clock, Globe, TrendingUp, Download, Settings, Plus, Edit2, Trash2 } from 'lucide-react';
+import { Calendar, Clock, Globe, TrendingUp, Download, Settings, Plus, RefreshCw ,  Edit2, Trash2 } from 'lucide-react';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
@@ -163,6 +163,75 @@ export default function App() {
       await loadData();
     } catch (error) {
       console.error('Error deleting limit:', error);
+    }
+  };
+
+  const addDefaultPresets = async () => {
+    try {
+      const existingLimits = await ChromeStorageService.getSiteLimits();
+      const hasDefaultPresets = existingLimits.some(limit => 
+        limit.pattern.includes('youtube.com/shorts') || 
+        limit.pattern.includes('instagram.com') ||
+        limit.pattern.includes('facebook.com')
+      );
+      
+      if (hasDefaultPresets) {
+        alert('Default presets are already added!');
+        return;
+      }
+
+      const defaultLimits = [
+        {
+          id: crypto.randomUUID(),
+          pattern: '.*youtube\\.com/shorts.*',
+          type: 'regex' as const,
+          dailyLimit: 0,
+          enabled: true,
+          createdAt: Date.now()
+        },
+        {
+          id: crypto.randomUUID(),
+          pattern: '.*drama.*',
+          type: 'regex' as const,
+          dailyLimit: 0,
+          enabled: true,
+          createdAt: Date.now()
+        },
+        {
+          id: crypto.randomUUID(),
+          pattern: '.*anime.*',
+          type: 'regex' as const,
+          dailyLimit: 0,
+          enabled: true,
+          createdAt: Date.now()
+        },
+        {
+          id: crypto.randomUUID(),
+          pattern: 'instagram.com',
+          type: 'domain' as const,
+          dailyLimit: 0,
+          enabled: true,
+          createdAt: Date.now()
+        },
+        {
+          id: crypto.randomUUID(),
+          pattern: 'facebook.com',
+          type: 'domain' as const,
+          dailyLimit: 0,
+          enabled: true,
+          createdAt: Date.now()
+        }
+      ];
+
+      for (const limit of defaultLimits) {
+        await ChromeStorageService.addSiteLimit(limit);
+      }
+      
+      await loadData();
+      alert('Default presets added successfully!');
+    } catch (error) {
+      console.error('Error adding default presets:', error);
+      alert('Error adding default presets');
     }
   };
 
@@ -346,13 +415,22 @@ export default function App() {
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">Site Limits</h2>
-              <button
-                onClick={() => setShowLimitModal(true)}
-                className="flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                Add Limit
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={addDefaultPresets}
+                  className="flex items-center gap-2 px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors"
+                >
+                  < RefreshCw className="w-4 h-4" />
+                  Reload Presets
+                </button>
+                <button
+                  onClick={() => setShowLimitModal(true)}
+                  className="flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Limit
+                </button>
+              </div>
             </div>
             
             <div className="space-y-3 max-h-96 overflow-y-auto">

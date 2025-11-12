@@ -53,11 +53,77 @@ class ActivityTracker {
     }
   }
 
+  private async initializeDefaultSiteLimits() {
+    const existingLimits = await ChromeStorageService.getSiteLimits();
+    console.log('Existing limits count:', existingLimits.length);
+    
+    // Check if we need to add default presets (no limits or only user-added limits)
+    const hasDefaultPresets = existingLimits.some(limit => 
+      limit.pattern.includes('youtube.com/shorts') || 
+      limit.pattern.includes('instagram.com') ||
+      limit.pattern.includes('facebook.com')
+    );
+    
+    if (!hasDefaultPresets) {
+      const defaultLimits: SiteLimit[] = [
+        {
+          id: UUID.generate(),
+          pattern: '.*youtube\\.com/shorts.*',
+          type: 'regex',
+          dailyLimit: 0, // Completely blocked
+          enabled: true,
+          createdAt: Date.now()
+        },
+        {
+          id: UUID.generate(),
+          pattern: '.*drama.*',
+          type: 'regex',
+          dailyLimit: 0, // Completely blocked
+          enabled: true,
+          createdAt: Date.now()
+        },
+        {
+          id: UUID.generate(),
+          pattern: '.*anime.*',
+          type: 'regex',
+          dailyLimit: 0, // Completely blocked
+          enabled: true,
+          createdAt: Date.now()
+        },
+        {
+          id: UUID.generate(),
+          pattern: 'instagram.com',
+          type: 'domain',
+          dailyLimit: 0, // Completely blocked
+          enabled: true,
+          createdAt: Date.now()
+        },
+        {
+          id: UUID.generate(),
+          pattern: 'facebook.com',
+          type: 'domain',
+          dailyLimit: 0, // Completely blocked
+          enabled: true,
+          createdAt: Date.now()
+        }
+      ];
+      
+      // Add defaults to existing limits
+      const updatedLimits = [...existingLimits, ...defaultLimits];
+      await ChromeStorageService.saveSiteLimits(updatedLimits);
+      console.log('Default site limits added:', defaultLimits.length, 'new limits added');
+      console.log('Total limits:', updatedLimits.length);
+    } else {
+      console.log('Default presets already exist, skipping initialization');
+    }
+  }
+
   private async initialize() {
     if (this.isInitialized) return;
     
     try {
-      await this.setupAlarms();
+      await this.initializeDefaultSiteLimits();
+      this.setupAlarms();
       this.setupEventListeners();
       this.startTracking();
       this.isInitialized = true;
