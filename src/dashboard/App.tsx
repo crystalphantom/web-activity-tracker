@@ -534,10 +534,10 @@ function LimitModal({ limit, onSave, onClose }: LimitModalProps) {
   const [formData, setFormData] = useState({
     pattern: limit?.pattern || '',
     type: limit?.type || 'domain' as 'domain' | 'regex',
-    dailyLimit: limit?.dailyLimit || 3600,
+    dailyLimit: limit?.dailyLimit ?? 3600,
     enabled: limit?.enabled ?? true,
-    hours: Math.floor((limit?.dailyLimit || 3600) / 3600),
-    minutes: Math.floor(((limit?.dailyLimit || 3600) % 3600) / 60)
+    hours: Math.floor((limit?.dailyLimit ?? 3600) / 3600),
+    minutes: Math.floor(((limit?.dailyLimit ?? 3600) % 3600) / 60)
   });
   const [timeInputMode, setTimeInputMode] = useState<'hours' | 'minutes'>('hours');
 
@@ -622,54 +622,82 @@ function LimitModal({ limit, onSave, onClose }: LimitModalProps) {
                 </button>
               </div>
             </div>
-            
-            {timeInputMode === 'hours' ? (
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <label className="block text-xs text-gray-600 mb-1">Hours</label>
-                  <input
-                    type="number"
-                    value={formData.hours}
-                    onChange={(e) => {
-                      const hours = parseInt(e.target.value) || 0;
-                      const newLimit = hours * 3600 + formData.minutes * 60;
-                      setFormData({ ...formData, hours, dailyLimit: newLimit });
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    min="0"
-                    max="23"
-                  />
-                </div>
-                <div className="flex-1">
-                  <label className="block text-xs text-gray-600 mb-1">Minutes</label>
-                  <input
-                    type="number"
-                    value={formData.minutes}
-                    onChange={(e) => {
-                      const minutes = parseInt(e.target.value) || 0;
-                      const newLimit = formData.hours * 3600 + minutes * 60;
-                      setFormData({ ...formData, minutes, dailyLimit: newLimit });
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    min="0"
-                    max="59"
-                  />
-                </div>
-              </div>
-            ) : (
+
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-3">
               <div>
-                <input
-                  type="number"
-                  value={Math.floor(formData.dailyLimit / 60)}
-                  onChange={(e) => {
-                    const minutes = parseInt(e.target.value) || 0;
-                    setFormData({ ...formData, dailyLimit: minutes * 60 });
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  min="0"
-                />
-                <div className="text-xs text-gray-500 mt-1">Total minutes</div>
+                <label htmlFor="completelyBlocked" className="text-sm font-medium text-gray-700">
+                  Completely Block Site
+                </label>
+                <div className="text-xs text-gray-500">
+                  {formData.dailyLimit === 0 ? 'Site will be completely blocked' : 'Site will have time limit'}
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, dailyLimit: formData.dailyLimit === 0 ? 3600 : 0 })}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  formData.dailyLimit === 0 ? 'bg-red-600' : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    formData.dailyLimit === 0 ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+            
+            {formData.dailyLimit > 0 && (
+              <>
+                {timeInputMode === 'hours' ? (
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <label className="block text-xs text-gray-600 mb-1">Hours</label>
+                      <input
+                        type="number"
+                        value={formData.hours}
+                        onChange={(e) => {
+                          const hours = parseInt(e.target.value) || 0;
+                          const newLimit = hours * 3600 + formData.minutes * 60;
+                          setFormData({ ...formData, hours, dailyLimit: newLimit });
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        min="0"
+                        max="23"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-xs text-gray-600 mb-1">Minutes</label>
+                      <input
+                        type="number"
+                        value={formData.minutes}
+                        onChange={(e) => {
+                          const minutes = parseInt(e.target.value) || 0;
+                          const newLimit = formData.hours * 3600 + minutes * 60;
+                          setFormData({ ...formData, minutes, dailyLimit: newLimit });
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        min="0"
+                        max="59"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <input
+                      type="number"
+                      value={Math.floor(formData.dailyLimit / 60)}
+                      onChange={(e) => {
+                        const minutes = parseInt(e.target.value) || 0;
+                        setFormData({ ...formData, dailyLimit: minutes * 60 });
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      min="0"
+                    />
+                    <div className="text-xs text-gray-500 mt-1">Total minutes</div>
+                  </div>
+                )}
+              </>
             )}
             
             <div className="text-sm text-gray-500 mt-2">
