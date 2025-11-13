@@ -139,10 +139,10 @@ class ActivityTracker {
     });
   }
 
-  private async handleMessage(message: any, sender: chrome.runtime.MessageSender, sendResponse: Function) {
+  private async handleMessage(message: any, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) { // eslint-disable-line @typescript-eslint/no-explicit-any
     try {
       switch (message.type) {
-        case 'CHECK_BLOCK_STATUS':
+        case 'CHECK_BLOCK_STATUS': {
           const isBlocked = await this.checkSiteLimits(message.url);
           const today = TimeUtils.getTodayString();
           const stats = await ChromeStorageService.getDailyStats(today);
@@ -157,8 +157,9 @@ class ActivityTracker {
             limit: limit ? TimeUtils.formatShortDuration(limit.dailyLimit) : 'Unknown'
           });
           break;
+        }
 
-        case 'GET_BLOCK_INFO':
+        case 'GET_BLOCK_INFO': {
           // Get the original blocked URL from session storage
           const sessionData = await chrome.storage.session.get(['blockedUrl']);
           const originalUrl = sessionData.blockedUrl || sender.url || '';
@@ -175,6 +176,7 @@ class ActivityTracker {
             message: `You've reached your daily time limit for ${blockDomain}`
           });
           break;
+        }
 
         case 'PAGE_ACTIVITY':
           // Handle page activity signals from content scripts

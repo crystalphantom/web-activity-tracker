@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ChromeStorageService } from '../lib/storage/chrome-storage';
 import { db } from '../lib/storage/database';
 import { TimeUtils } from '../lib/utils/helpers';
@@ -17,11 +17,7 @@ export default function App() {
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [editingLimit, setEditingLimit] = useState<SiteLimit | null>(null);
 
-  useEffect(() => {
-    loadData();
-  }, [selectedDate, viewMode]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [limits] = await Promise.all([
         ChromeStorageService.getSiteLimits()
@@ -34,7 +30,11 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedDate, viewMode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const loadStats = async () => {
     const dates = getDateRange();

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ChromeStorageService } from '../lib/storage/chrome-storage';
 import { db } from '../lib/storage/database';
 import { ExtensionSettings } from '../lib/types';
@@ -15,11 +15,7 @@ export default function App() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
-  useEffect(() => {
-    loadSettings();
-  }, []);
-
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     try {
       const currentSettings = await ChromeStorageService.getSettings();
       setSettings(currentSettings);
@@ -29,7 +25,11 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
 
   const saveSettings = async () => {
     setSaving(true);
