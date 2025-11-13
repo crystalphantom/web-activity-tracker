@@ -8,7 +8,7 @@ set -e
 # Configuration
 REPO_OWNER="crystalphantom"  # Replace with your GitHub username
 REPO_NAME="web-activity-tracker"  # Replace with your repo name
-VERSION="0.0.1"  # Update this when you release new versions
+VERSION="1.1.0"  # Update this when you release new versions
 ZIP_NAME="web-activity-tracker-v${VERSION}.zip"
 EXTENSION_DIR="web-activity-tracker"
 

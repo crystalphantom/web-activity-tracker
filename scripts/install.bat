@@ -7,7 +7,7 @@ setlocal enabledelayedexpansion
 REM Configuration
 set REPO_OWNER=crystalphantom
 set REPO_NAME=web-activity-tracker
-set VERSION=0.0.1
+set VERSION=1.1.0
 set ZIP_NAME=web-activity-tracker-v%VERSION%.zip
 set EXTENSION_DIR=web-activity-tracker
 
