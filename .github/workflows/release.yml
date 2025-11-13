@@ -1,0 +1,99 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 0.0.1)'
+        required: true
+        default: '0.0.1'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run linting
+      run: npm run lint
+      
+    - name: Build extension
+      run: npm run build
+      
+    - name: Create release zip
+      run: |
+        cd dist
+        zip -r ../web-activity-tracker-${{ github.ref_name }}.zip .
+        
+    - name: Get version from tag or input
+      id: version
+      run: |
+        if [[ "${{ github.ref_type }}" == "tag" ]]; then
+          VERSION="${{ github.ref_name }}"
+        else
+          VERSION="v${{ github.event.inputs.version }}"
+        fi
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.version.outputs.version }}
+        name: Web Activity Tracker ${{ steps.version.outputs.version }}
+        body: |
+          ## Web Activity Tracker ${{ steps.version.outputs.version }}
+          
+          ### Installation
+          
+          **One-command install:**
+          ```bash
+          curl -sSL https://raw.githubusercontent.com/crystalphantom/web-activity-tracker/main/scripts/install.sh | bash
+          ```
+          
+          **Manual install:**
+          1. Download `web-activity-tracker-${{ steps.version.outputs.version }}.zip`
+          2. Extract to `web-activity-tracker` folder
+          3. Load in Chrome as unpacked extension
+          
+          ### Changes
+          - Bug fixes and improvements
+          - Updated dependencies
+          
+        files: |
+          web-activity-tracker-${{ steps.version.outputs.version }}.zip
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Update version in scripts
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        # Extract version without 'v' prefix
+        VERSION=${{ steps.version.outputs.version }}
+        CLEAN_VERSION=${VERSION#v}
+        
+        # Update install scripts
+        sed -i.bak "s/VERSION=\"[0-9]\+\.[0-9]\+\.[0-9]\+\"/VERSION=\"$CLEAN_VERSION\"/" scripts/install.sh
+        sed -i.bak "s/VERSION=[0-9]\+\.[0-9]\+\.[0-9]\+/VERSION=$CLEAN_VERSION/" scripts/install.bat
+        
+        # Commit and push changes
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add scripts/install.sh scripts/install.bat
+        git diff --staged --quiet || git commit -m "chore: update version to $CLEAN_VERSION in install scripts"
+        git push

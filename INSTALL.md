@@ -17,12 +17,12 @@ iwr -useb https://raw.githubusercontent.com/crystalphantom/web-activity-tracker/
 1. **Download the extension:**
    ```bash
    # Mac/Linux
-   curl -L -o extension.zip "https://github.com/crystalphantom/web-activity-tracker/releases/download/v1.0.0/web-activity-tracker-v1.0.0.zip"
+   curl -L -o extension.zip "https://github.com/crystalphantom/web-activity-tracker/releases/download/v.0.0.1/web-activity-tracker-v0.0.1.zip"
    unzip extension.zip -d web-activity-tracker
    rm extension.zip
    
    # Windows
-   curl -L -o extension.zip "https://github.com/crystalphantom/web-activity-tracker/releases/download/v1.0.0/web-activity-tracker-v1.0.0.zip"
+   curl -L -o extension.zip "https://github.com/crystalphantom/web-activity-tracker/releases/download/v.0.0.1/web-activity-tracker-v0.0.1.zip"
    powershell -command "Expand-Archive -Path 'extension.zip' -DestinationPath 'web-activity-tracker'"
    del extension.zip
    ```

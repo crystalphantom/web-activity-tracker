@@ -7,7 +7,7 @@ setlocal enabledelayedexpansion
 REM Configuration
 set REPO_OWNER=crystalphantom
 set REPO_NAME=web-activity-tracker
-set VERSION=1.0.0
+set VERSION=0.0.1
 set ZIP_NAME=web-activity-tracker-v%VERSION%.zip
 set EXTENSION_DIR=web-activity-tracker
 
@@ -29,7 +29,7 @@ if exist "%EXTENSION_DIR%" (
 
 REM Download the extension
 echo ⬇️  Downloading from GitHub...
-set DOWNLOAD_URL=https://github.com/%REPO_OWNER%/%REPO_NAME%/releases/download/v%VERSION%/%ZIP_NAME%
+set DOWNLOAD_URL=https://github.com/%REPO_OWNER%/%REPO_NAME%/releases/download/v.%VERSION%/%ZIP_NAME%
 curl -L -o "%ZIP_NAME%" "%DOWNLOAD_URL%"
 
 REM Extract the extension

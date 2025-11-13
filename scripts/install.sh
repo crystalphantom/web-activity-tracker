@@ -8,7 +8,7 @@ set -e
 # Configuration
 REPO_OWNER="crystalphantom"  # Replace with your GitHub username
 REPO_NAME="web-activity-tracker"  # Replace with your repo name
-VERSION="1.0.0"  # Update this when you release new versions
+VERSION="0.0.1"  # Update this when you release new versions
 ZIP_NAME="web-activity-tracker-v${VERSION}.zip"
 EXTENSION_DIR="web-activity-tracker"
 
@@ -34,7 +34,7 @@ fi
 
 # Download the extension
 echo "⬇️  Downloading from GitHub..."
-DOWNLOAD_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/v${VERSION}/${ZIP_NAME}"
+DOWNLOAD_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/v.${VERSION}/${ZIP_NAME}"
 curl -L -o "${ZIP_NAME}" "$DOWNLOAD_URL"
 
 # Extract the extension
