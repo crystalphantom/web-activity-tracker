@@ -32,7 +32,7 @@
         .icon {
             width: 120px;
             height: 120px;
-            background: #fee2e2;
+            background: #dbeafe;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -41,9 +41,8 @@
         }
 
         .icon svg {
-            width: 60px;
-            height: 60px;
-            color: #dc2626;
+            width: 80px;
+            height: 80px;
         }
 
         h1 {
@@ -171,17 +170,21 @@
 <body>
     <div class="container">
         <div class="icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="8" x2="12" y2="12"></line>
-                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            <svg viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="64" cy="64" r="60" fill="#3B82F6"/>
+                <path d="M64 28 L80 36 L80 52 Q80 66 64 72 Q48 66 48 52 L48 36 Z" fill="#10B981"/>
+                <g transform="translate(64, 48)">
+                    <path d="M-8 -4 Q-8 -8 -4 -8 L4 -8 Q8 -8 8 -4 L8 4 Q8 6 6 6 L-6 6 Q-8 6 -8 4 Z" fill="white"/>
+                    <circle cx="0" cy="-8" r="2" fill="white"/>
+                    <circle cx="0" cy="6" r="1.5" fill="#1E40AF"/>
+                </g>
             </svg>
         </div>
 
-        <h1>Time Limit Reached</h1>
+        <h1>Wake Up!</h1>
 
         <div class="message" id="message">
-            You've reached your daily time limit for this website. Take a break and come back tomorrow!
+            Time to wake up from doomscrolling! You've reached your daily limit. Take a break and come back refreshed tomorrow.
         </div>
 
         <div class="stats">
