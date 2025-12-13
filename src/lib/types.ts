@@ -36,4 +36,24 @@ export interface ExtensionSettings {
   trackingExclusions: string[];
   dataRetentionDays: number;
   theme: 'light' | 'dark';
+  limitedAccessDuration: number; // in minutes
+}
+
+export interface LimitedAccessReason {
+  id: string;
+  text: string;
+  category: 'betrayal' | 'genuine' | 'neutral';
+  emotionalWeight: number; // 1-10, higher for more guilt-inducing reasons
+}
+
+export interface LimitedAccessSession {
+  id: string;
+  domain: string;
+  reasonId: string;
+  reasonText: string;
+  category: 'betrayal' | 'genuine' | 'neutral';
+  startTime: number;
+  endTime: number;
+  duration: number;
+  date: string;
 }

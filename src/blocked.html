@@ -137,6 +137,38 @@
             transform: translateY(-1px);
         }
 
+        .reason-section {
+            background: #f9fafb;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            border: 1px solid #e5e7eb;
+        }
+
+        .reason-select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            background: white;
+            color: #1f2937;
+            margin-bottom: 1rem;
+        }
+
+        .reason-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .limited-access-info {
+            background: #ecfdf5;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #d1fae5;
+        }
+
         .quote {
             margin-top: 2rem;
             padding: 1.5rem;
@@ -206,9 +238,26 @@
             🕐 Resets in: <span id="timeUntilReset">Loading...</span>
         </div>
 
+        <div class="reason-section" id="reasonSection" style="display: none;">
+            <h3 style="color: #1f2937; margin-bottom: 1rem; font-size: 1.25rem;">Why do you need access?</h3>
+            <div class="reason-dropdown">
+                <select id="reasonSelect" class="reason-select">
+                    <option value="">Select a reason...</option>
+                </select>
+            </div>
+            <div class="limited-access-info" id="limitedAccessInfo" style="display: none;">
+                <p style="color: #6b7280; font-size: 0.875rem; margin-top: 0.5rem;">
+                    You'll have <span id="accessDuration">5</span> minutes of access. This will be tracked.
+                </p>
+            </div>
+        </div>
+
         <div class="buttons">
             <button class="btn btn-primary" id="continueBtn">
                 Continue Anyway
+            </button>
+            <button class="btn btn-secondary" id="limitedAccessBtn" style="display: none;">
+                Request Limited Access
             </button>
             <button class="btn btn-secondary" id="settingsBtn">
                 Adjust Limit

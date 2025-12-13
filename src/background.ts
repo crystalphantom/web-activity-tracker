@@ -2,7 +2,7 @@ import { db } from './lib/storage/database';
 import { ChromeStorageService } from './lib/storage/chrome-storage';
 import { PatternMatcher } from './lib/patterns/matcher';
 import { TimeUtils, UUID } from './lib/utils/helpers';
-import { SiteLimit } from './lib/types';
+import { SiteLimit, LimitedAccessReason } from './lib/types';
 
 interface TrackingState {
   activeTabId: number | null;
@@ -10,6 +10,17 @@ interface TrackingState {
   startTime: number | null;
   isIdle: boolean;
   lastUpdateTime: number;
+}
+
+interface LimitedAccessState {
+  [tabId: number]: {
+    domain: string;
+    reasonId: string;
+    reasonText: string;
+    category: 'betrayal' | 'genuine' | 'neutral';
+    startTime: number;
+    endTime: number;
+  };
 }
 
 class ActivityTracker {
@@ -21,6 +32,7 @@ class ActivityTracker {
     lastUpdateTime: Date.now()
   };
 
+  private limitedAccessSessions: LimitedAccessState = {};
   private updateInterval: number | null = null;
   private idleCheckInterval: number | null = null;
   private isInitialized = false;
@@ -143,7 +155,7 @@ class ActivityTracker {
     try {
       switch (message.type) {
         case 'CHECK_BLOCK_STATUS': {
-          const isBlocked = await this.checkSiteLimits(message.url);
+          const isBlocked = await this.checkSiteLimits(message.url, sender.tab?.id);
           const today = TimeUtils.getTodayString();
           const stats = await ChromeStorageService.getDailyStats(today);
           const domain = PatternMatcher.extractDomain(message.url);
@@ -175,6 +187,46 @@ class ActivityTracker {
             limit: blockLimit?.dailyLimit || 0,
             message: `You've reached your daily time limit for ${blockDomain}`
           });
+          break;
+        }
+
+        case 'REQUEST_LIMITED_ACCESS': {
+          const reason: LimitedAccessReason = message.reason;
+          const sessionData = await chrome.storage.session.get(['blockedUrl']);
+          const originalUrl = sessionData.blockedUrl || '';
+          const domain = PatternMatcher.extractDomain(originalUrl);
+          
+          const settings = await ChromeStorageService.getSettings();
+          const accessDuration = settings.limitedAccessDuration || 5; // Default 5 minutes
+          
+          const endTime = Date.now() + (accessDuration * 60 * 1000);
+          
+          // Store limited access session
+          if (sender.tab?.id) {
+            this.limitedAccessSessions[sender.tab.id] = {
+              domain,
+              reasonId: reason.id,
+              reasonText: reason.text,
+              category: reason.category,
+              startTime: Date.now(),
+              endTime
+            };
+          }
+          
+          // Save to database for tracking
+          await db.limitedAccessSessions.add({
+            id: UUID.generate(),
+            domain,
+            reasonId: reason.id,
+            reasonText: reason.text,
+            category: reason.category,
+            startTime: Date.now(),
+            endTime,
+            duration: accessDuration * 60, // in seconds
+            date: TimeUtils.getTodayString()
+          });
+          
+          sendResponse({ success: true });
           break;
         }
 
@@ -308,7 +360,7 @@ class ActivityTracker {
       return;
     }
 
-    const shouldBlock = await this.checkSiteLimits(url);
+    const shouldBlock = await this.checkSiteLimits(url, tabId);
     if (shouldBlock) {
       await this.blockSite(tabId);
       return;
@@ -324,7 +376,18 @@ class ActivityTracker {
     }
   }
 
-  private async checkSiteLimits(url: string): Promise<boolean> {
+  private async checkSiteLimits(url: string, tabId?: number): Promise<boolean> {
+    // First check if this tab has an active limited access session
+    if (tabId && this.limitedAccessSessions[tabId]) {
+      const session = this.limitedAccessSessions[tabId];
+      if (Date.now() < session.endTime) {
+        return false; // Allow access during limited access session
+      } else {
+        // Session expired, clean it up
+        delete this.limitedAccessSessions[tabId];
+      }
+    }
+
     const limits = await ChromeStorageService.getSiteLimits();
     const today = TimeUtils.getTodayString();
     
@@ -386,7 +449,25 @@ class ActivityTracker {
       this.state.lastUpdateTime = now;
     }
 
+    // Clean up expired limited access sessions
+    await this.cleanupExpiredSessions();
+
     this.updateBadge();
+  }
+
+  private async cleanupExpiredSessions() {
+    const now = Date.now();
+    const expiredSessions: number[] = [];
+    
+    for (const [tabId, session] of Object.entries(this.limitedAccessSessions)) {
+      if (now >= session.endTime) {
+        expiredSessions.push(parseInt(tabId));
+      }
+    }
+    
+    expiredSessions.forEach(tabId => {
+      delete this.limitedAccessSessions[tabId];
+    });
   }
 
   private async checkIdleState() {

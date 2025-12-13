@@ -9,7 +9,8 @@ export default function App() {
     idleTimeout: 60,
     trackingExclusions: ['localhost', '127.0.0.1'],
     dataRetentionDays: 90,
-    theme: 'light'
+    theme: 'light',
+    limitedAccessDuration: 5
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -143,7 +144,8 @@ export default function App() {
         idleTimeout: 60,
         trackingExclusions: ['localhost', '127.0.0.1'],
         dataRetentionDays: 90,
-        theme: 'light'
+        theme: 'light',
+        limitedAccessDuration: 5
       };
       
       try {
@@ -264,6 +266,23 @@ export default function App() {
                   <option value="light">Light</option>
                   <option value="dark">Dark</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Limited Access Duration (minutes)
+                </label>
+                <input
+                  type="number"
+                  value={settings.limitedAccessDuration}
+                  onChange={(e) => setSettings({ ...settings, limitedAccessDuration: parseInt(e.target.value) || 5 })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  min="1"
+                  max="60"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  How long users can access blocked sites when requesting limited access (1-60 minutes)
+                </p>
               </div>
             </div>
           </div>

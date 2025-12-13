@@ -2,15 +2,16 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ChromeStorageService } from '../lib/storage/chrome-storage';
 import { db } from '../lib/storage/database';
 import { TimeUtils } from '../lib/utils/helpers';
-import { DailyStats, SiteLimit } from '../lib/types';
+import { DailyStats, SiteLimit, LimitedAccessSession } from '../lib/types';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { Calendar, Clock, Globe, TrendingUp, Download, Settings, Plus, RefreshCw ,  Edit2, Trash2 } from 'lucide-react';
+import { Calendar, Clock, Globe, TrendingUp, Download, Settings, Plus, RefreshCw ,  Edit2, Trash2, AlertTriangle } from 'lucide-react';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
 export default function App() {
   const [stats, setStats] = useState<DailyStats[]>([]);
   const [siteLimits, setSiteLimits] = useState<SiteLimit[]>([]);
+  const [limitedAccessSessions, setLimitedAccessSessions] = useState<LimitedAccessSession[]>([]);
   const [selectedDate] = useState(TimeUtils.getTodayString());
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('day');
   const [loading, setLoading] = useState(true);
@@ -19,11 +20,13 @@ export default function App() {
 
   const loadData = useCallback(async () => {
     try {
-      const [limits] = await Promise.all([
-        ChromeStorageService.getSiteLimits()
+      const [limits, sessions] = await Promise.all([
+        ChromeStorageService.getSiteLimits(),
+        loadLimitedAccessSessions()
       ]);
       
       setSiteLimits(limits);
+      setLimitedAccessSessions(sessions);
       await loadStats();
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -35,6 +38,26 @@ export default function App() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const loadLimitedAccessSessions = async (): Promise<LimitedAccessSession[]> => {
+    try {
+      const dates = getDateRange();
+      const sessions: LimitedAccessSession[] = [];
+
+      for (const date of dates) {
+        const dateSessions = await db.limitedAccessSessions
+          .where('date')
+          .equals(date)
+          .toArray();
+        sessions.push(...dateSessions);
+      }
+
+      return sessions.sort((a, b) => b.startTime - a.startTime);
+    } catch (error) {
+      console.error('Error loading limited access sessions:', error);
+      return [];
+    }
+  };
 
   const loadStats = async () => {
     const dates = getDateRange();
@@ -109,6 +132,37 @@ export default function App() {
       value: Math.round(site.time / 60), // Convert to minutes
       percentage: Math.round((site.time / totalTime) * 100)
     }));
+  };
+
+  const getLimitedAccessStats = () => {
+    const betrayalCount = limitedAccessSessions.filter(s => s.category === 'betrayal').length;
+    const genuineCount = limitedAccessSessions.filter(s => s.category === 'genuine').length;
+    const neutralCount = limitedAccessSessions.filter(s => s.category === 'neutral').length;
+    const totalSessions = limitedAccessSessions.length;
+
+    return {
+      totalSessions,
+      betrayalCount,
+      genuineCount,
+      neutralCount,
+      betrayalRate: totalSessions > 0 ? Math.round((betrayalCount / totalSessions) * 100) : 0
+    };
+  };
+
+  const getTopReasons = () => {
+    const reasonCounts: { [reason: string]: number } = {};
+    
+    limitedAccessSessions.forEach(session => {
+      if (!reasonCounts[session.reasonText]) {
+        reasonCounts[session.reasonText] = 0;
+      }
+      reasonCounts[session.reasonText]++;
+    });
+
+    return Object.entries(reasonCounts)
+      .map(([reason, count]) => ({ reason, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
   };
 
   const getTotalTime = () => {
@@ -257,6 +311,8 @@ export default function App() {
   const topSites = getTopSites();
   const pieData = getPieData();
   const totalTime = getTotalTime();
+  const limitedAccessStats = getLimitedAccessStats();
+  const topReasons = getTopReasons();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -325,6 +381,60 @@ export default function App() {
               <Calendar className="w-8 h-8 text-purple-600" />
             </div>
           </div>
+        </div>
+
+        {/* Limited Access Statistics */}
+        <div className="bg-white p-6 rounded-lg shadow mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-orange-600" />
+              Limited Access Analysis
+            </h2>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="text-center p-4 bg-gray-50 rounded-lg">
+              <p className="text-2xl font-bold text-gray-900">{limitedAccessStats.totalSessions}</p>
+              <p className="text-sm text-gray-600">Total Sessions</p>
+            </div>
+            <div className="text-center p-4 bg-red-50 rounded-lg">
+              <p className="text-2xl font-bold text-red-600">{limitedAccessStats.betrayalCount}</p>
+              <p className="text-sm text-gray-600">Betrayals</p>
+            </div>
+            <div className="text-center p-4 bg-green-50 rounded-lg">
+              <p className="text-2xl font-bold text-green-600">{limitedAccessStats.genuineCount}</p>
+              <p className="text-sm text-gray-600">Genuine</p>
+            </div>
+            <div className="text-center p-4 bg-orange-50 rounded-lg">
+              <p className="text-2xl font-bold text-orange-600">{limitedAccessStats.betrayalRate}%</p>
+              <p className="text-sm text-gray-600">Betrayal Rate</p>
+            </div>
+          </div>
+
+          {topReasons.length > 0 && (
+            <div>
+              <h3 className="text-md font-medium text-gray-900 mb-3">Top Reasons</h3>
+              <div className="space-y-2">
+                {topReasons.map((item, index) => (
+                  <div key={item.reason} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium text-gray-500 w-6">#{index + 1}</span>
+                      <span className="text-sm text-gray-900 truncate max-w-xs">{item.reason}</span>
+                    </div>
+                    <span className="text-sm font-medium text-gray-600">{item.count} times</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {limitedAccessStats.totalSessions === 0 && (
+            <div className="text-center text-gray-500 py-8">
+              <AlertTriangle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p>No limited access sessions recorded yet.</p>
+              <p className="text-sm">This will show your patterns when you override blocked sites.</p>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
