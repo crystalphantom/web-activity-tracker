@@ -581,80 +581,91 @@ export default function App() {
                </div>
              </div>
             
-            <div className="space-y-3 max-h-96 overflow-y-auto">
-              {siteLimits.length === 0 ? (
-                <div className="text-center text-gray-500 py-8">
-                  No limits set. Click "Add Limit" to get started.
-                </div>
-              ) : (
-                siteLimits.map(limit => (
-                  <div key={limit.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="font-medium text-gray-900">
-                          {limit.pattern}
-                        </div>
-                        <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">
-                          {limit.type}
-                        </span>
-                        {!limit.enabled && (
-                          <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded">
-                            Disabled
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        <div>
-                          Current: {TimeUtils.formatShortDuration(limit.dailyLimit)}
-                          {limit.dailyLimit === 0 && (
-                            <span className="text-red-600 ml-2">(Blocked)</span>
-                          )}
-                        </div>
-                        <div className="text-xs text-gray-400">
-                          Default: {TimeUtils.formatShortDuration(limit.defaultDailyLimit)}
-                          {limit.defaultDailyLimit === 0 && (
-                            <span className="text-red-600 ml-2">(Blocked)</span>
-                          )}
-                          {limit.dailyLimit !== limit.defaultDailyLimit && (
-                            <span className="text-orange-600 ml-2">(Modified)</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => toggleLimit(limit)}
-                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                          limit.enabled ? 'bg-blue-600' : 'bg-gray-300'
-                        }`}
-                      >
-                        <span
-                          className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                            limit.enabled ? 'translate-x-5' : 'translate-x-1'
-                          }`}
-                        />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setEditingLimit(limit);
-                          setShowLimitModal(true);
-                        }}
-                        className="p-1 text-gray-600 hover:text-blue-600 transition-colors"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => deleteLimit(limit.id)}
-                        className="p-1 text-gray-600 hover:text-red-600 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+<div className="space-y-3 max-h-96 overflow-y-auto">
+               {siteLimits.length === 0 ? (
+                 <div className="text-center text-gray-500 py-8">
+                   No limits set. Click "Add Limit" to get started.
+                 </div>
+               ) : (
+                 siteLimits.map(limit => {
+                   const isPresetSite = limit.defaultDailyLimit !== undefined && limit.defaultEnabled !== undefined;
+                   
+                   return (
+                     <div key={limit.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                       <div className="flex-1">
+                         <div className="flex items-center gap-2 mb-1">
+                           <div className="font-medium text-gray-900">
+                             {limit.pattern}
+                           </div>
+                           <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">
+                             {limit.type}
+                           </span>
+                           {isPresetSite && (
+                             <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">
+                               Preset
+                             </span>
+                           )}
+                           {!limit.enabled && (
+                             <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded">
+                               Disabled
+                             </span>
+                           )}
+                         </div>
+                         <div className="text-sm text-gray-500">
+                           <div>
+                             Current: {TimeUtils.formatShortDuration(limit.dailyLimit)}
+                             {limit.dailyLimit === 0 && (
+                               <span className="text-red-600 ml-2">(Blocked)</span>
+                             )}
+                           </div>
+                           <div className="text-xs text-gray-400">
+                             Default: {TimeUtils.formatShortDuration(limit.defaultDailyLimit)}
+                             {limit.defaultDailyLimit === 0 && (
+                               <span className="text-red-600 ml-2">(Blocked)</span>
+                             )}
+                             {limit.dailyLimit !== limit.defaultDailyLimit && (
+                               <span className="text-orange-600 ml-2">(Modified)</span>
+                             )}
+                           </div>
+                         </div>
+                       </div>
+                       {!isPresetSite && (
+                         <div className="flex items-center gap-2">
+                           <button
+                             type="button"
+                             onClick={() => toggleLimit(limit)}
+                             className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                               limit.enabled ? 'bg-blue-600' : 'bg-gray-300'
+                             }`}
+                           >
+                             <span
+                               className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                                 limit.enabled ? 'translate-x-5' : 'translate-x-1'
+                               }`}
+                             />
+                           </button>
+                           <button
+                             onClick={() => {
+                               setEditingLimit(limit);
+                               setShowLimitModal(true);
+                             }}
+                             className="p-1 text-gray-600 hover:text-blue-600 transition-colors"
+                           >
+                             <Edit2 className="w-4 h-4" />
+                           </button>
+                           <button
+                             onClick={() => deleteLimit(limit.id)}
+                             className="p-1 text-gray-600 hover:text-red-600 transition-colors"
+                           >
+                             <Trash2 className="w-4 h-4" />
+                           </button>
+                         </div>
+                       )}
+                     </div>
+                   );
+                 })
+               )}
+             </div>
           </div>
         </div>
       </div>
