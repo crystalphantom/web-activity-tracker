@@ -250,7 +250,9 @@ export default function App() {
           pattern: '.*youtube\\.com/shorts.*',
           type: 'regex' as const,
           dailyLimit: 0,
+          defaultDailyLimit: 0,
           enabled: true,
+          defaultEnabled: true,
           createdAt: Date.now()
         },
         {
@@ -258,7 +260,9 @@ export default function App() {
           pattern: '.*drama.*',
           type: 'regex' as const,
           dailyLimit: 0,
+          defaultDailyLimit: 0,
           enabled: true,
+          defaultEnabled: true,
           createdAt: Date.now()
         },
         {
@@ -266,23 +270,29 @@ export default function App() {
           pattern: '.*anime.*',
           type: 'regex' as const,
           dailyLimit: 0,
+          defaultDailyLimit: 0,
           enabled: true,
+          defaultEnabled: true,
           createdAt: Date.now()
         },
         {
           id: crypto.randomUUID(),
           pattern: 'instagram.com',
           type: 'domain' as const,
-          dailyLimit: 0,
+          dailyLimit: 1800,
+          defaultDailyLimit: 1800,
           enabled: true,
+          defaultEnabled: true,
           createdAt: Date.now()
         },
         {
           id: crypto.randomUUID(),
           pattern: 'facebook.com',
           type: 'domain' as const,
-          dailyLimit: 0,
+          dailyLimit: 1800,
+          defaultDailyLimit: 1800,
           enabled: true,
+          defaultEnabled: true,
           createdAt: Date.now()
         }
       ];
@@ -296,6 +306,17 @@ export default function App() {
     } catch (error) {
       console.error('Error adding default presets:', error);
       alert('Error adding default presets');
+    }
+  };
+
+  const resetAllLimitsToDefaults = async () => {
+    try {
+      await ChromeStorageService.resetLimitsToDefaults();
+      await loadData();
+      alert('All limits have been reset to their default values!');
+    } catch (error) {
+      console.error('Error resetting limits to defaults:', error);
+      alert('Error resetting limits to defaults');
     }
   };
 
@@ -533,25 +554,32 @@ export default function App() {
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Site Limits</h2>
-              <div className="flex gap-2">
-                <button
-                  onClick={addDefaultPresets}
-                  className="flex items-center gap-2 px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors"
-                >
-                  < RefreshCw className="w-4 h-4" />
-                  Reload Presets
-                </button>
-                <button
-                  onClick={() => setShowLimitModal(true)}
-                  className="flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Limit
-                </button>
-              </div>
-            </div>
+              <div className="flex items-center justify-between mb-4">
+               <h2 className="text-lg font-semibold text-gray-900">Site Limits</h2>
+               <div className="flex gap-2">
+                 <button
+                   onClick={addDefaultPresets}
+                   className="flex items-center gap-2 px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors"
+                 >
+                   < RefreshCw className="w-4 h-4" />
+                   Reload Presets
+                 </button>
+                 <button
+                   onClick={resetAllLimitsToDefaults}
+                   className="flex items-center gap-2 px-3 py-1 bg-orange-600 text-white rounded text-sm hover:bg-orange-700 transition-colors"
+                 >
+                   <RefreshCw className="w-4 h-4" />
+                   Reset to Defaults
+                 </button>
+                 <button
+                   onClick={() => setShowLimitModal(true)}
+                   className="flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
+                 >
+                   <Plus className="w-4 h-4" />
+                   Add Limit
+                 </button>
+               </div>
+             </div>
             
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {siteLimits.length === 0 ? (
@@ -576,10 +604,21 @@ export default function App() {
                         )}
                       </div>
                       <div className="text-sm text-gray-500">
-                        Limit: {TimeUtils.formatShortDuration(limit.dailyLimit)}
-                        {limit.dailyLimit === 0 && (
-                          <span className="text-red-600 ml-2">(Blocked)</span>
-                        )}
+                        <div>
+                          Current: {TimeUtils.formatShortDuration(limit.dailyLimit)}
+                          {limit.dailyLimit === 0 && (
+                            <span className="text-red-600 ml-2">(Blocked)</span>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          Default: {TimeUtils.formatShortDuration(limit.defaultDailyLimit)}
+                          {limit.defaultDailyLimit === 0 && (
+                            <span className="text-red-600 ml-2">(Blocked)</span>
+                          )}
+                          {limit.dailyLimit !== limit.defaultDailyLimit && (
+                            <span className="text-orange-600 ml-2">(Modified)</span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -659,7 +698,9 @@ function LimitModal({ limit, onSave, onClose }: LimitModalProps) {
       pattern: formData.pattern,
       type: formData.type,
       dailyLimit: formData.dailyLimit,
+      defaultDailyLimit: limit?.defaultDailyLimit || formData.dailyLimit,
       enabled: formData.enabled,
+      defaultEnabled: limit?.defaultEnabled !== undefined ? limit.defaultEnabled : formData.enabled,
       createdAt: limit?.createdAt || Date.now()
     };
 

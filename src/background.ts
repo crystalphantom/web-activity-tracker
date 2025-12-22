@@ -82,7 +82,9 @@ class ActivityTracker {
           pattern: '.*youtube\\.com/shorts.*',
           type: 'regex',
           dailyLimit: 0, // Completely blocked
+          defaultDailyLimit: 0,
           enabled: true,
+          defaultEnabled: true,
           createdAt: Date.now()
         },
         {
@@ -90,7 +92,9 @@ class ActivityTracker {
           pattern: '.*drama.*',
           type: 'regex',
           dailyLimit: 0, // Completely blocked
+          defaultDailyLimit: 0,
           enabled: true,
+          defaultEnabled: true,
           createdAt: Date.now()
         },
         {
@@ -98,23 +102,29 @@ class ActivityTracker {
           pattern: '.*anime.*',
           type: 'regex',
           dailyLimit: 0, // Completely blocked
+          defaultDailyLimit: 0,
           enabled: true,
+          defaultEnabled: true,
           createdAt: Date.now()
         },
         {
           id: UUID.generate(),
           pattern: 'instagram.com',
           type: 'domain',
-          dailyLimit: 0, // Completely blocked
+          dailyLimit: 1800, // 30 minutes default
+          defaultDailyLimit: 1800,
           enabled: true,
+          defaultEnabled: true,
           createdAt: Date.now()
         },
         {
           id: UUID.generate(),
           pattern: 'facebook.com',
           type: 'domain',
-          dailyLimit: 0, // Completely blocked
+          dailyLimit: 1800, // 30 minutes default
+          defaultDailyLimit: 1800,
           enabled: true,
+          defaultEnabled: true,
           createdAt: Date.now()
         }
       ];
@@ -125,7 +135,14 @@ class ActivityTracker {
       console.log('Default site limits added:', defaultLimits.length, 'new limits added');
       console.log('Total limits:', updatedLimits.length);
     } else {
-      console.log('Default presets already exist, skipping initialization');
+      // Migrate existing limits to include default values
+      const migratedLimits = existingLimits.map(limit => ({
+        ...limit,
+        defaultDailyLimit: limit.defaultDailyLimit || limit.dailyLimit,
+        defaultEnabled: limit.defaultEnabled !== undefined ? limit.defaultEnabled : limit.enabled
+      }));
+      await ChromeStorageService.saveSiteLimits(migratedLimits);
+      console.log('Migrated existing limits with default values');
     }
   }
 
@@ -558,6 +575,10 @@ class ActivityTracker {
         lastUpdated: Date.now()
       });
     }
+
+    // Reset all limits to their default values
+    await ChromeStorageService.resetLimitsToDefaults();
+    console.log('Daily reset completed: limits restored to defaults');
   }
 
   private updateBadge() {

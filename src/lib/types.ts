@@ -14,7 +14,9 @@ export interface SiteLimit {
   type: 'domain' | 'regex';
   compiledRegex?: string;
   dailyLimit: number;
+  defaultDailyLimit: number;
   enabled: boolean;
+  defaultEnabled: boolean;
   createdAt: number;
 }
 

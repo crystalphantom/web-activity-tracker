@@ -18,7 +18,13 @@ export class ChromeStorageService {
 
   static async addSiteLimit(limit: SiteLimit): Promise<void> {
     const limits = await this.getSiteLimits();
-    limits.push(limit);
+    // Ensure default values are set when adding new limit
+    const limitWithDefaults = {
+      ...limit,
+      defaultDailyLimit: limit.defaultDailyLimit || limit.dailyLimit,
+      defaultEnabled: limit.defaultEnabled !== undefined ? limit.defaultEnabled : limit.enabled
+    };
+    limits.push(limitWithDefaults);
     await this.saveSiteLimits(limits);
   }
 
@@ -61,6 +67,16 @@ export class ChromeStorageService {
 
   static async saveSettings(settings: ExtensionSettings): Promise<void> {
     await chrome.storage.local.set({ [STORAGE_KEYS.SETTINGS]: settings });
+  }
+
+  static async resetLimitsToDefaults(): Promise<void> {
+    const limits = await this.getSiteLimits();
+    const resetLimits = limits.map(limit => ({
+      ...limit,
+      dailyLimit: limit.defaultDailyLimit,
+      enabled: limit.defaultEnabled
+    }));
+    await this.saveSiteLimits(resetLimits);
   }
 
   static async clearOldData(): Promise<void> {
